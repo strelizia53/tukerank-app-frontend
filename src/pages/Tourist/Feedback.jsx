@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, addDoc, collection } from "firebase/firestore";
 import axios from "axios";
 
 const Feedback = () => {
@@ -29,7 +29,7 @@ const Feedback = () => {
     e.preventDefault();
 
     try {
-      // Save feedback in Firestore
+      // Step 1: Save feedback to the ride
       await updateDoc(doc(db, "rides", rideId), {
         feedback: {
           review,
@@ -37,15 +37,29 @@ const Feedback = () => {
         },
       });
 
-      // Send feedback to Python backend for NLP + Elo update
-      await axios.post("https://your-python-api.com/feedback", {
+      // Step 2: Send feedback to Python backend
+      const res = await axios.post("https://your-python-api.com/feedback", {
         driverId: ride.driverId,
         rideId: ride.id,
         rating,
         review,
       });
 
-      setMessage("✅ Feedback submitted. Thank you!");
+      const { sentiment, updatedElo } = res.data;
+
+      // Step 3: Update driver elo in users/{driverId}
+      const driverRef = doc(db, "users", ride.driverId);
+      await updateDoc(driverRef, {
+        elo: updatedElo,
+      });
+
+      // Step 4: Log Elo snapshot to users/{driverId}/eloHistory
+      await addDoc(collection(db, "users", ride.driverId, "eloHistory"), {
+        elo: updatedElo,
+        date: new Date(),
+      });
+
+      setMessage("✅ Feedback submitted and Elo updated!");
       setTimeout(() => navigate("/rides"), 2000);
     } catch (err) {
       console.error(err);

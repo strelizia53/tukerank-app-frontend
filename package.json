@@ -19,6 +19,7 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",
     "react-scripts": "5.0.1",
+    "recharts": "^2.15.4",
     "tailwindcss": "^4.1.10",
     "web-vitals": "^2.1.4",
     "zxcvbn": "^4.4.2"

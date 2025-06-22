@@ -3,11 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { set } from "date-fns";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [firstName, setFirstName] = useState("");
+  const [Username, setUsername] = useState("");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -16,10 +17,10 @@ const Navbar = () => {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setFirstName(docSnap.data().firstName || "");
+          setUsername(docSnap.data().username || "");
         }
       } else {
-        setFirstName("");
+        setUsername("");
       }
     });
     return () => unsub();
@@ -44,7 +45,7 @@ const Navbar = () => {
 
         {user ? (
           <>
-            <span style={styles.userText}>Welcome, {firstName}</span>
+            <span style={styles.userText}>Welcome, {Username}</span>
             <button onClick={handleLogout} style={styles.logoutBtn}>
               Logout
             </button>
