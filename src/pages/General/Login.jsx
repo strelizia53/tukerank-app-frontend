@@ -1,20 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { auth, db } from "../../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(
+    localStorage.getItem("rememberedEmail") || ""
+  );
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(
+    !!localStorage.getItem("rememberedEmail")
+  );
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  // Auto redirect if already logged in
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const docSnap = await getDoc(doc(db, "users", user.uid));
+        if (docSnap.exists()) {
+          const role = docSnap.data().role;
+          navigate(
+            role === "tourist" ? "/dashboard/tourist" : "/dashboard/driver"
+          );
+        }
+      }
+    });
+    return () => unsub();
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     setLoading(true);
 
     try {
@@ -25,13 +52,21 @@ const Login = () => {
       );
       const uid = userCredential.user.uid;
 
-      // Fetch user role from Firestore
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
         const role = userDoc.data().role;
-        if (role === "tourist") navigate("/dashboard/tourist");
-        else if (role === "driver") navigate("/dashboard/driver");
-        else navigate("/");
+        setMessage("Login successful! Redirecting...");
+        setTimeout(() => {
+          navigate(
+            role === "tourist" ? "/dashboard/tourist" : "/dashboard/driver"
+          );
+        }, 1000);
       } else {
         setError("User record not found.");
       }
@@ -45,6 +80,17 @@ const Login = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) return setError("Please enter your email to reset password.");
+    setError("");
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setMessage("Reset link sent! Check your inbox.");
+    } catch (err) {
+      setError("Failed to send reset email.");
     }
   };
 
@@ -68,18 +114,38 @@ const Login = () => {
           required
           style={styles.input}
         />
-        <label style={{ textAlign: "left" }}>
-          <input
-            type="checkbox"
-            checked={showPassword}
-            onChange={() => setShowPassword((prev) => !prev)}
-          />{" "}
-          Show Password
-        </label>
+        <div style={styles.row}>
+          <label>
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={() => setShowPassword((prev) => !prev)}
+            />{" "}
+            Show Password
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={() => setRememberMe((prev) => !prev)}
+            />{" "}
+            Remember Me
+          </label>
+        </div>
+
         <button type="submit" style={styles.button} disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
+
+        <p
+          onClick={handlePasswordReset}
+          style={{ ...styles.link, textAlign: "right" }}
+        >
+          Forgot Password?
+        </p>
+
         {error && <p style={styles.error}>{error}</p>}
+        {message && <p style={styles.success}>{message}</p>}
       </form>
     </div>
   );
@@ -107,6 +173,12 @@ const styles = {
     borderRadius: "6px",
     border: "1px solid #ccc",
   },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "0.9rem",
+    color: "#444",
+  },
   button: {
     padding: "10px",
     backgroundColor: "#00796b",
@@ -119,6 +191,17 @@ const styles = {
   error: {
     color: "red",
     marginTop: "10px",
+  },
+  success: {
+    color: "green",
+    marginTop: "10px",
+  },
+  link: {
+    color: "#00796b",
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "0.9rem",
+    marginTop: "-10px",
   },
 };
 
