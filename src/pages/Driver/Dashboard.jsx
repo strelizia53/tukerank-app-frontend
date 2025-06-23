@@ -22,12 +22,18 @@ export default function DriverDashboard() {
       if (u) {
         setUser(u);
         await fetchDriverData(u.uid);
-        await fetchFeedbacks(u.uid);
       }
     });
 
     return () => unsub();
   }, []);
+
+  // Trigger fetching feedbacks once username is loaded
+  useEffect(() => {
+    if (username) {
+      fetchFeedbacks(username);
+    }
+  }, [username]);
 
   const fetchDriverData = async (uid) => {
     const userRef = doc(db, "users", uid);
@@ -46,8 +52,11 @@ export default function DriverDashboard() {
     setElo(100);
   };
 
-  const fetchFeedbacks = async (uid) => {
-    const q = query(collection(db, "feedbacks"), where("driverId", "==", uid));
+  const fetchFeedbacks = async (uname) => {
+    const q = query(
+      collection(db, "feedbacks"),
+      where("driverId", "==", uname)
+    );
     const querySnap = await getDocs(q);
     const feedbackList = [];
     querySnap.forEach((doc) => feedbackList.push(doc.data()));
