@@ -18,26 +18,19 @@ const Feedback = () => {
       if (rideDoc.exists()) {
         setRide({ id: rideDoc.id, ...rideDoc.data() });
       } else {
-        setMessage("Ride not found.");
+        setMessage("⚠️ Ride not found.");
       }
     };
-
     fetchRide();
   }, [rideId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      // Step 1: Save feedback to the ride
       await updateDoc(doc(db, "rides", rideId), {
-        feedback: {
-          review,
-          rating,
-        },
+        feedback: { review, rating },
       });
 
-      // Step 2: Send feedback to Python backend
       const res = await axios.post("https://your-python-api.com/feedback", {
         driverId: ride.driverId,
         rideId: ride.id,
@@ -47,103 +40,134 @@ const Feedback = () => {
 
       const { sentiment, updatedElo } = res.data;
 
-      // Step 3: Update driver elo in users/{driverId}
-      const driverRef = doc(db, "users", ride.driverId);
-      await updateDoc(driverRef, {
-        elo: updatedElo,
-      });
+      await updateDoc(doc(db, "users", ride.driverId), { elo: updatedElo });
 
-      // Step 4: Log Elo snapshot to users/{driverId}/eloHistory
       await addDoc(collection(db, "users", ride.driverId, "eloHistory"), {
         elo: updatedElo,
         date: new Date(),
       });
 
-      setMessage("✅ Feedback submitted and Elo updated!");
+      setMessage("✅ Feedback submitted successfully!");
       setTimeout(() => navigate("/rides"), 2000);
     } catch (err) {
       console.error(err);
-      setMessage("❌ Failed to submit feedback.");
+      setMessage("❌ Failed to submit feedback. Try again.");
     }
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Give Feedback</h2>
-      {ride ? (
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label>
-            Rating:
-            <select
-              value={rating}
-              onChange={(e) => setRating(parseInt(e.target.value))}
-              style={styles.input}
-            >
-              {[5, 4, 3, 2, 1].map((num) => (
-                <option key={num} value={num}>
-                  {num} Star{num > 1 && "s"}
-                </option>
-              ))}
-            </select>
-          </label>
+    <div style={styles.wrapper}>
+      <div style={styles.container}>
+        <h2 style={styles.heading}>📝 Give Feedback</h2>
+        {ride ? (
+          <form onSubmit={handleSubmit} style={styles.form}>
+            <label style={styles.label}>
+              Rating:
+              <select
+                value={rating}
+                onChange={(e) => setRating(parseInt(e.target.value))}
+                style={styles.select}
+              >
+                {[5, 4, 3, 2, 1].map((num) => (
+                  <option key={num} value={num}>
+                    {num} Star{num > 1 && "s"}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <textarea
-            placeholder="Leave a review..."
-            value={review}
-            onChange={(e) => setReview(e.target.value)}
-            required
-            style={styles.textarea}
-          ></textarea>
+            <textarea
+              placeholder="Write your review..."
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              required
+              style={styles.textarea}
+            />
 
-          <button type="submit" style={styles.button}>
-            Submit Feedback
-          </button>
-        </form>
-      ) : (
-        <p>Loading ride...</p>
-      )}
-      {message && <p style={styles.message}>{message}</p>}
+            <button type="submit" style={styles.button}>
+              Submit Feedback
+            </button>
+          </form>
+        ) : (
+          <p style={styles.loading}>Loading ride details...</p>
+        )}
+        {message && <div style={styles.message}>{message}</div>}
+      </div>
     </div>
   );
 };
 
 const styles = {
+  wrapper: {
+    minHeight: "100vh",
+    background: "linear-gradient(to right, #e0f7fa, #ffffff)",
+    padding: "3rem 1rem",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
   container: {
-    maxWidth: "600px",
-    margin: "auto",
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
     padding: "2rem",
-    marginTop: "2rem",
+    maxWidth: "600px",
+    width: "100%",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+  },
+  heading: {
+    fontSize: "1.8rem",
+    marginBottom: "1.5rem",
+    color: "#004d40",
+    fontWeight: "bold",
+    textAlign: "center",
   },
   form: {
     display: "flex",
     flexDirection: "column",
     gap: "1rem",
   },
-  input: {
-    padding: "8px",
+  label: {
     fontSize: "1rem",
-    width: "100%",
+    fontWeight: "500",
+    color: "#00796b",
   },
-  textarea: {
+  select: {
+    width: "100%",
     padding: "10px",
-    fontSize: "1rem",
-    height: "120px",
     borderRadius: "6px",
     border: "1px solid #ccc",
+    fontSize: "1rem",
+    marginTop: "0.5rem",
+  },
+  textarea: {
+    height: "140px",
+    fontSize: "1rem",
+    padding: "10px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    resize: "vertical",
   },
   button: {
-    padding: "10px",
     backgroundColor: "#00796b",
     color: "#fff",
     fontWeight: "bold",
+    padding: "12px",
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
+    fontSize: "1rem",
+    transition: "background-color 0.3s ease",
   },
   message: {
-    marginTop: "1rem",
-    color: "#00796b",
-    fontWeight: "bold",
+    marginTop: "1.5rem",
+    fontSize: "1rem",
+    textAlign: "center",
+    fontWeight: "600",
+    color: "#00695c",
+  },
+  loading: {
+    fontStyle: "italic",
+    color: "#555",
   },
 };
 

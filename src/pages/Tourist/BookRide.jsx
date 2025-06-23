@@ -5,6 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { Autocomplete } from "@react-google-maps/api";
 import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const BookRide = () => {
   const [drivers, setDrivers] = useState([]);
@@ -75,79 +76,110 @@ const BookRide = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Book a Ride</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <select
-          name="driverId"
-          value={driverId}
-          onChange={(e) => setDriverId(e.target.value)}
-          required
-          style={styles.input}
-        >
-          <option value="">Select a Driver</option>
-          {drivers.map((driver) => (
-            <option key={driver.id} value={driver.id}>
-              {driver.firstName} {driver.lastName} ({driver.username})
-            </option>
-          ))}
-        </select>
+    <div style={styles.wrapper}>
+      <div style={styles.container}>
+        <h2 style={styles.heading}>🚕 Book a Ride</h2>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <label style={styles.label}>Select Driver</label>
+          <select
+            name="driverId"
+            value={driverId}
+            onChange={(e) => setDriverId(e.target.value)}
+            required
+            style={styles.input}
+          >
+            <option value="">-- Choose a Driver --</option>
+            {drivers.map((driver) => (
+              <option key={driver.id} value={driver.id}>
+                {driver.firstName} {driver.lastName} ({driver.username})
+              </option>
+            ))}
+          </select>
 
-        <Autocomplete onLoad={(ref) => (pickupRef.current = ref)}>
-          <input
-            type="text"
-            placeholder="Pickup Location"
+          <label style={styles.label}>Pickup Location</label>
+          <Autocomplete onLoad={(ref) => (pickupRef.current = ref)}>
+            <input
+              type="text"
+              placeholder="Enter pickup location"
+              style={styles.input}
+            />
+          </Autocomplete>
+
+          <label style={styles.label}>Destination</label>
+          <Autocomplete onLoad={(ref) => (destinationRef.current = ref)}>
+            <input
+              type="text"
+              placeholder="Enter destination"
+              style={styles.input}
+            />
+          </Autocomplete>
+
+          <label style={styles.label}>Scheduled Time</label>
+          <DatePicker
+            selected={scheduledTime}
+            onChange={(date) => setScheduledTime(date)}
+            showTimeSelect
+            dateFormat="Pp"
+            placeholderText="Select date & time"
+            minDate={new Date()}
+            required
+            className="date-picker"
             style={styles.input}
           />
-        </Autocomplete>
 
-        <Autocomplete onLoad={(ref) => (destinationRef.current = ref)}>
-          <input type="text" placeholder="Destination" style={styles.input} />
-        </Autocomplete>
+          <label style={styles.label}>Note to Driver (Optional)</label>
+          <textarea
+            name="note"
+            placeholder="e.g., I'm carrying heavy luggage"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            style={styles.textarea}
+          ></textarea>
 
-        <DatePicker
-          selected={scheduledTime}
-          onChange={(date) => setScheduledTime(date)}
-          showTimeSelect
-          dateFormat="Pp"
-          placeholderText="Select Date & Time"
-          minDate={new Date()}
-          required
-          style={styles.input}
-          className="date-picker"
-        />
-
-        <textarea
-          name="note"
-          placeholder="Optional Note to Driver"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          style={styles.textarea}
-        ></textarea>
-
-        <button type="submit" style={styles.button}>
-          Confirm Booking
-        </button>
-        {toast && <div style={styles.toast}>{toast}</div>}
-      </form>
+          <button type="submit" style={styles.button}>
+            Confirm Booking
+          </button>
+          {toast && <div style={styles.toast}>{toast}</div>}
+        </form>
+      </div>
     </div>
   );
 };
 
 const styles = {
+  wrapper: {
+    background: "linear-gradient(to right, #e0f2f1, #ffffff)",
+    minHeight: "100vh",
+    padding: "3rem 1rem",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   container: {
-    maxWidth: "500px",
-    margin: "auto",
+    maxWidth: "550px",
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
     padding: "2rem",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "10px",
-    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-    marginTop: "3rem",
+    animation: "fadeIn 0.6s ease-in-out",
+  },
+  heading: {
+    fontSize: "1.8rem",
+    color: "#004d40",
+    marginBottom: "1.5rem",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   form: {
     display: "flex",
     flexDirection: "column",
     gap: "1rem",
+  },
+  label: {
+    fontWeight: "500",
+    fontSize: "0.95rem",
+    color: "#333",
   },
   input: {
     padding: "10px",
@@ -157,20 +189,22 @@ const styles = {
     width: "100%",
   },
   textarea: {
-    minHeight: "80px",
     padding: "10px",
     borderRadius: "6px",
     border: "1px solid #ccc",
     fontSize: "16px",
+    resize: "vertical",
   },
   button: {
-    padding: "10px",
+    padding: "12px",
     backgroundColor: "#00796b",
     color: "#fff",
     border: "none",
     borderRadius: "6px",
     fontWeight: "bold",
+    fontSize: "16px",
     cursor: "pointer",
+    transition: "background-color 0.3s ease",
   },
   toast: {
     marginTop: "1rem",

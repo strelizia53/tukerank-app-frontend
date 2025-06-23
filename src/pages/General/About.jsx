@@ -3,40 +3,42 @@ import React from "react";
 const About = () => {
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>About TukeRank</h1>
+      <h1 style={styles.heading}>About TukeRank 🛺</h1>
 
       <p style={styles.paragraph}>
-        <strong>TukeRank</strong> is a smart ride rating system designed to
-        bring transparency, trust, and safety to tuk-tuk transportation. By
-        combining advanced technologies like <strong>Sentiment Analysis</strong>{" "}
-        and a dynamic <strong>Elo-based ranking system</strong>, we ensure both
-        tourists and drivers experience fair and reliable interactions.
+        <strong>TukeRank</strong> is a transparent and intelligent ride rating
+        system designed to enhance trust and safety in the tuk-tuk
+        transportation industry. It blends powerful technologies like{" "}
+        <strong>Sentiment Analysis</strong> and an{" "}
+        <strong>Elo-based rating system</strong> to provide a reliable,
+        data-driven reputation for drivers—making tourism smarter and fairer.
       </p>
 
       <h2 style={styles.subheading}>🧠 How It Works</h2>
       <ul style={styles.list}>
         <li>
-          <strong>Sentiment Analysis</strong>: After each ride, tourists can
-          submit feedback through text or star ratings. Our system analyzes the
-          sentiment behind each review using Natural Language Processing (NLP).
+          <strong>Sentiment Analysis:</strong> After every ride, tourists leave
+          feedback through text or star ratings. Our NLP engine detects tone,
+          keywords, and emotional intent to score feedback more meaningfully.
         </li>
         <li>
-          <strong>Elo Rating Algorithm</strong>: Drivers receive a live ranking
-          score similar to chess ratings. It adjusts fairly based on review tone
-          and rating patterns.
+          <strong>Elo Rating System:</strong> Drivers gain or lose ranking
+          points based on the quality and sentiment of reviews—similar to
+          competitive games like chess.
         </li>
         <li>
-          <strong>Dashboard Insights</strong>: Tourists can view driver
-          performance; drivers can see their own improvement trends.
+          <strong>Live Dashboards:</strong> Tourists can explore driver profiles
+          and ranks, while drivers get insight into their growth, reviews, and
+          performance metrics.
         </li>
       </ul>
 
-      <h2 style={styles.subheading}>🎯 Why TukeRank?</h2>
+      <h2 style={styles.subheading}>🎯 Why Choose TukeRank?</h2>
       <ul style={styles.list}>
-        <li>✅ Builds trust between tourists and local drivers</li>
-        <li>✅ Reduces bias and manual errors in feedback</li>
-        <li>✅ Encourages good service with fair competition</li>
-        <li>✅ Promotes smarter tourism experiences</li>
+        <li>✅ Builds mutual trust between tourists and tuk-tuk drivers</li>
+        <li>✅ Rewards good service and discourages bad behavior</li>
+        <li>✅ Reduces bias by using AI to interpret reviews</li>
+        <li>✅ Encourages healthy competition through transparent rankings</li>
       </ul>
     </div>
   );
@@ -44,20 +46,23 @@ const About = () => {
 
 const styles = {
   container: {
-    maxWidth: "800px",
-    margin: "auto",
-    padding: "2rem",
-    lineHeight: "1.8",
+    maxWidth: "900px",
+    margin: "0 auto",
+    padding: "2rem 1.5rem",
     color: "#333",
+    lineHeight: "1.7",
+    backgroundColor: "#f9fdfc",
+    borderRadius: "8px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
   },
   heading: {
-    fontSize: "2.5rem",
+    fontSize: "2.4rem",
     color: "#004d40",
     marginBottom: "1rem",
     textAlign: "center",
   },
   subheading: {
-    fontSize: "1.5rem",
+    fontSize: "1.6rem",
     color: "#00796b",
     marginTop: "2rem",
     marginBottom: "0.75rem",
@@ -67,9 +72,9 @@ const styles = {
     marginBottom: "1.5rem",
   },
   list: {
-    listStyleType: "disc",
-    paddingLeft: "1.5rem",
     fontSize: "1.05rem",
+    paddingLeft: "1.5rem",
+    listStyle: "disc",
   },
 };
 

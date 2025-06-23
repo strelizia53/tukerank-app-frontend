@@ -22,7 +22,6 @@ const Login = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  // Auto redirect if already logged in
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -52,11 +51,9 @@ const Login = () => {
       );
       const uid = userCredential.user.uid;
 
-      if (rememberMe) {
-        localStorage.setItem("rememberedEmail", email);
-      } else {
-        localStorage.removeItem("rememberedEmail");
-      }
+      rememberMe
+        ? localStorage.setItem("rememberedEmail", email)
+        : localStorage.removeItem("rememberedEmail");
 
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
@@ -95,72 +92,89 @@ const Login = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Login</h2>
-      <form onSubmit={handleLogin} style={styles.form}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type={showPassword ? "text" : "password"}
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <div style={styles.row}>
-          <label>
-            <input
-              type="checkbox"
-              checked={showPassword}
-              onChange={() => setShowPassword((prev) => !prev)}
-            />{" "}
-            Show Password
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={() => setRememberMe((prev) => !prev)}
-            />{" "}
-            Remember Me
-          </label>
-        </div>
+    <div style={styles.wrapper}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>
+          Login to <span style={{ color: "#00796b" }}>TukeRank</span>
+        </h2>
 
-        <button type="submit" style={styles.button} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
+        <form onSubmit={handleLogin} style={styles.form}>
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={styles.input}
+          />
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={styles.input}
+          />
 
-        <p
-          onClick={handlePasswordReset}
-          style={{ ...styles.link, textAlign: "right" }}
-        >
-          Forgot Password?
-        </p>
+          <div style={styles.row}>
+            <label>
+              <input
+                type="checkbox"
+                checked={showPassword}
+                onChange={() => setShowPassword((prev) => !prev)}
+              />{" "}
+              Show Password
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={() => setRememberMe((prev) => !prev)}
+              />{" "}
+              Remember Me
+            </label>
+          </div>
 
-        {error && <p style={styles.error}>{error}</p>}
-        {message && <p style={styles.success}>{message}</p>}
-      </form>
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+
+          <p onClick={handlePasswordReset} style={styles.link}>
+            Forgot Password?
+          </p>
+
+          {error && <p style={styles.error}>{error}</p>}
+          {message && <p style={styles.success}>{message}</p>}
+        </form>
+      </div>
     </div>
   );
 };
 
 const styles = {
-  container: {
-    maxWidth: "400px",
-    margin: "auto",
+  wrapper: {
+    minHeight: "100vh",
+    background: "linear-gradient(to right, #e0f2f1, #ffffff)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     padding: "2rem",
-    marginTop: "4rem",
-    backgroundColor: "#f5f5f5",
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    padding: "2rem",
     borderRadius: "12px",
+    maxWidth: "400px",
+    width: "100%",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+    animation: "fadeIn 0.8s ease-in-out",
+  },
+  title: {
     textAlign: "center",
-    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+    marginBottom: "1.5rem",
+    fontWeight: "bold",
+    fontSize: "1.8rem",
+    color: "#004d40",
   },
   form: {
     display: "flex",
@@ -168,41 +182,59 @@ const styles = {
     gap: "1rem",
   },
   input: {
-    padding: "10px",
-    fontSize: "16px",
+    padding: "12px",
+    fontSize: "1rem",
     borderRadius: "6px",
     border: "1px solid #ccc",
+    outlineColor: "#00796b",
   },
   row: {
     display: "flex",
     justifyContent: "space-between",
     fontSize: "0.9rem",
-    color: "#444",
+    color: "#555",
   },
   button: {
-    padding: "10px",
+    padding: "12px",
     backgroundColor: "#00796b",
     color: "#fff",
-    fontWeight: "bold",
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "1rem",
+    transition: "background 0.3s",
   },
   error: {
-    color: "red",
-    marginTop: "10px",
+    color: "#d32f2f",
+    fontWeight: "500",
+    fontSize: "0.95rem",
   },
   success: {
-    color: "green",
-    marginTop: "10px",
+    color: "#388e3c",
+    fontWeight: "500",
+    fontSize: "0.95rem",
   },
   link: {
     color: "#00796b",
+    textAlign: "right",
     cursor: "pointer",
     fontWeight: "bold",
     fontSize: "0.9rem",
-    marginTop: "-10px",
+    textDecoration: "underline",
   },
 };
+
+// Inject keyframes animation if not using a CSS file
+const styleSheet = document.styleSheets[0];
+styleSheet.insertRule(
+  `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`,
+  styleSheet.cssRules.length
+);
 
 export default Login;

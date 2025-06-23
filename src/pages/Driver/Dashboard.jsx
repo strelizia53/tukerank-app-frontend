@@ -55,92 +55,145 @@ export default function DriverDashboard() {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Driver Dashboard</h2>
-      {user && (
-        <div style={styles.card}>
-          <p>
-            <strong>Username:</strong> {username}
-          </p>
-          <p>
-            <strong>Email:</strong> {user.email}
-          </p>
-          <p>
-            <strong>Elo Rating:</strong>{" "}
-            {elo === "N/A" ? (
-              <>
-                N/A{" "}
-                <button style={styles.initBtn} onClick={initializeElo}>
-                  Initialize Rating
-                </button>
-              </>
-            ) : (
-              elo
-            )}
-          </p>
-        </div>
-      )}
+    <div style={styles.wrapper}>
+      <div style={styles.container}>
+        <h2 style={styles.heading}>🚖 Driver Dashboard</h2>
 
-      <div style={styles.feedbackSection}>
-        <h3>Ride Feedback History</h3>
-        {feedbacks.length === 0 ? (
-          <p>No feedback yet.</p>
-        ) : (
-          <ul>
-            {feedbacks.map((fb, i) => (
-              <li key={i} style={styles.feedbackCard}>
-                <p>
-                  <strong>Date:</strong> {fb.date || "N/A"}
-                </p>
-                <p>
-                  <strong>Rating:</strong> {fb.rating} ⭐
-                </p>
-                <p>
-                  <strong>Sentiment:</strong> {fb.sentiment}
-                </p>
-                <p>
-                  <strong>Review:</strong> {fb.review}
-                </p>
-              </li>
-            ))}
-          </ul>
+        {user && (
+          <div style={styles.profileCard}>
+            <p>
+              <strong>Username:</strong> {username}
+            </p>
+            <p>
+              <strong>Email:</strong> {user.email}
+            </p>
+            <p>
+              <strong>Elo Rating:</strong>{" "}
+              {elo === "N/A" ? (
+                <>
+                  <span style={{ color: "#888" }}>N/A</span>
+                  <button style={styles.initBtn} onClick={initializeElo}>
+                    Initialize
+                  </button>
+                </>
+              ) : (
+                <span style={{ color: "#00796b", fontWeight: "600" }}>
+                  {elo}
+                </span>
+              )}
+            </p>
+          </div>
         )}
+
+        <div style={styles.feedbackSection}>
+          <h3 style={styles.subheading}>📄 Ride Feedback History</h3>
+          {feedbacks.length === 0 ? (
+            <p style={styles.noData}>No feedback yet.</p>
+          ) : (
+            <ul style={styles.feedbackList}>
+              {feedbacks.map((fb, i) => (
+                <li key={i} style={styles.feedbackCard}>
+                  <p>
+                    <strong>Date:</strong>{" "}
+                    {fb.date ? new Date(fb.date).toLocaleString() : "N/A"}
+                  </p>
+                  <p>
+                    <strong>Rating:</strong> {fb.rating} ⭐
+                  </p>
+                  <p>
+                    <strong>Sentiment:</strong>{" "}
+                    <span
+                      style={{
+                        color:
+                          fb.sentiment === "Positive"
+                            ? "#2e7d32"
+                            : fb.sentiment === "Negative"
+                            ? "#c62828"
+                            : "#616161",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {fb.sentiment}
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Review:</strong> {fb.review}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 const styles = {
-  container: {
-    maxWidth: "800px",
-    margin: "auto",
+  wrapper: {
+    minHeight: "100vh",
+    background: "linear-gradient(to right, #e0f7fa, #ffffff)",
     padding: "2rem",
   },
-  card: {
-    background: "#e0f2f1",
+  container: {
+    maxWidth: "900px",
+    margin: "auto",
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+    padding: "2rem",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  },
+  heading: {
+    fontSize: "1.9rem",
+    color: "#004d40",
+    marginBottom: "1.5rem",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  profileCard: {
+    backgroundColor: "#e0f2f1",
     padding: "1.5rem",
     borderRadius: "10px",
     marginBottom: "2rem",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.05)",
+  },
+  subheading: {
+    fontSize: "1.4rem",
+    color: "#00796b",
+    marginBottom: "1rem",
   },
   feedbackSection: {
-    background: "#f9f9f9",
-    padding: "1rem",
-    borderRadius: "8px",
+    backgroundColor: "#f5f5f5",
+    padding: "1.5rem",
+    borderRadius: "10px",
+  },
+  feedbackList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
   },
   feedbackCard: {
-    background: "#fff",
+    backgroundColor: "#ffffff",
     padding: "1rem",
     border: "1px solid #ddd",
+    borderRadius: "8px",
     marginBottom: "1rem",
-    borderRadius: "6px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
   },
   initBtn: {
     marginLeft: "1rem",
-    padding: "5px 10px",
+    padding: "5px 12px",
     backgroundColor: "#00796b",
     color: "#fff",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "5px",
     cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "0.9rem",
+  },
+  noData: {
+    textAlign: "center",
+    color: "#888",
+    fontSize: "1rem",
   },
 };

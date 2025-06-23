@@ -63,7 +63,7 @@ const Register = () => {
     setError("");
 
     try {
-      // 1. Check for unique username
+      // Check unique username
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("username", "==", username));
       const querySnapshot = await getDocs(q);
@@ -73,7 +73,7 @@ const Register = () => {
         return setError("Username is already taken. Please choose another.");
       }
 
-      // 2. Register with Firebase Auth
+      // Register
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -81,7 +81,6 @@ const Register = () => {
       );
       const uid = userCredential.user.uid;
 
-      // 3. Store user details in Firestore
       await setDoc(doc(db, "users", uid), {
         email,
         username,
@@ -91,7 +90,7 @@ const Register = () => {
         createdAt: new Date(),
       });
 
-      // 4. Redirect based on role
+      // Redirect
       navigate(role === "tourist" ? "/dashboard/tourist" : "/dashboard/driver");
     } catch (err) {
       let friendlyMessage = "Something went wrong.";
@@ -124,127 +123,167 @@ const Register = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Register</h2>
-      <form onSubmit={handleRegister} style={styles.form}>
-        <input
-          type="text"
-          name="firstName"
-          placeholder="First Name"
-          value={formData.firstName}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        <input
-          type="text"
-          name="lastName"
-          placeholder="Last Name"
-          value={formData.lastName}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        <input
-          type="text"
-          name="username"
-          placeholder="Username (must be unique)"
-          value={formData.username}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        <input
-          type={showPassword ? "text" : "password"}
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        <div style={{ textAlign: "left", marginBottom: "-0.5rem" }}>
-          <small>
-            Password Strength: {getPasswordStrengthLabel(passwordScore)}
-          </small>
-        </div>
-        <input
-          type={showPassword ? "text" : "password"}
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        <label style={{ textAlign: "left" }}>
+    <div style={styles.wrapper}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>
+          Create Your <span style={{ color: "#00796b" }}>TukeRank</span> Account
+        </h2>
+
+        <form onSubmit={handleRegister} style={styles.form}>
           <input
-            type="checkbox"
-            checked={showPassword}
-            onChange={() => setShowPassword((prev) => !prev)}
-          />{" "}
-          Show Password
-        </label>
-        <select
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          style={styles.input}
-        >
-          <option value="tourist">Tourist</option>
-          <option value="driver">Driver</option>
-        </select>
-        <button type="submit" style={styles.button} disabled={loading}>
-          {loading ? "Creating account..." : "Register"}
-        </button>
-        {error && <p style={styles.error}>{error}</p>}
-      </form>
+            type="text"
+            name="firstName"
+            placeholder="First Name"
+            value={formData.firstName}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <input
+            type="text"
+            name="lastName"
+            placeholder="Last Name"
+            value={formData.lastName}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <input
+            type="text"
+            name="username"
+            placeholder="Username (must be unique)"
+            value={formData.username}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <input
+            type={showPassword ? "text" : "password"}
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <div style={styles.strength}>
+            <small>
+              Password Strength:{" "}
+              <strong>{getPasswordStrengthLabel(passwordScore)}</strong>
+            </small>
+          </div>
+          <input
+            type={showPassword ? "text" : "password"}
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+          <div style={styles.row}>
+            <label>
+              <input
+                type="checkbox"
+                checked={showPassword}
+                onChange={() => setShowPassword((prev) => !prev)}
+              />{" "}
+              Show Password
+            </label>
+          </div>
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            style={styles.input}
+          >
+            <option value="tourist">Tourist</option>
+            <option value="driver">Driver</option>
+          </select>
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? "Creating account..." : "Register"}
+          </button>
+          {error && <p style={styles.error}>{error}</p>}
+        </form>
+      </div>
     </div>
   );
 };
 
 const styles = {
-  container: {
-    maxWidth: "450px",
-    margin: "auto",
+  wrapper: {
+    minHeight: "100vh",
+    background: "linear-gradient(to right, #e0f7fa, #ffffff)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     padding: "2rem",
-    marginTop: "3rem",
-    backgroundColor: "#f5f5f5",
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    padding: "2.5rem",
     borderRadius: "12px",
-    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+    maxWidth: "500px",
+    width: "100%",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+    animation: "fadeIn 0.8s ease-in-out",
+  },
+  title: {
     textAlign: "center",
+    marginBottom: "1.8rem",
+    fontWeight: "bold",
+    fontSize: "1.9rem",
+    color: "#004d40",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "1rem",
+    gap: "1.1rem",
   },
   input: {
-    padding: "10px",
-    fontSize: "16px",
+    padding: "12px",
+    fontSize: "1rem",
     borderRadius: "6px",
     border: "1px solid #ccc",
+    outlineColor: "#00796b",
+  },
+  strength: {
+    textAlign: "left",
+    marginTop: "-10px",
+    marginBottom: "-5px",
+    fontSize: "0.9rem",
+    color: "#555",
+  },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "0.9rem",
+    color: "#444",
   },
   button: {
-    padding: "10px",
+    padding: "12px",
     backgroundColor: "#00796b",
     color: "#fff",
-    fontWeight: "bold",
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "1rem",
+    transition: "background 0.3s",
   },
   error: {
-    color: "red",
+    color: "#d32f2f",
+    fontWeight: "500",
+    fontSize: "0.95rem",
     marginTop: "10px",
   },
 };
