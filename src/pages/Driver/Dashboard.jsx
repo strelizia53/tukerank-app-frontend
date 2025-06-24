@@ -9,10 +9,13 @@ import {
   doc,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { motion } from "framer-motion";
+import { FaUser, FaStar, FaCheck, FaTimes, FaClock } from "react-icons/fa";
 
 export default function DriverDashboard() {
   const [user, setUser] = useState(null);
   const [elo, setElo] = useState(null);
+  const [username, setUsername] = useState("");
   const [feedbacks, setFeedbacks] = useState([]);
   const [rideRequests, setRideRequests] = useState([]);
 
@@ -20,9 +23,11 @@ export default function DriverDashboard() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setUser(u);
-        fetchDriverData(u.email);
-        fetchRideRequests(u.email);
-        fetchFeedbacks(u.email);
+        const fetchedUsername = await fetchDriverData(u.email);
+        if (fetchedUsername) {
+          fetchRideRequests(u.email);
+          fetchFeedbacks(fetchedUsername);
+        }
       }
     });
 
@@ -36,7 +41,10 @@ export default function DriverDashboard() {
     if (!snapshot.empty) {
       const driver = snapshot.docs[0].data();
       setElo(driver.elo || "N/A");
+      setUsername(driver.username);
+      return driver.username;
     }
+    return null;
   };
 
   const initializeElo = async () => {
@@ -58,25 +66,22 @@ export default function DriverDashboard() {
       where("status", "==", "Scheduled")
     );
     const snap = await getDocs(q);
-    const list = [];
-    snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+    const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setRideRequests(list);
   };
 
-  const fetchFeedbacks = async (email) => {
+  const fetchFeedbacks = async (driverUsername) => {
     const q = query(
       collection(db, "feedbacks"),
-      where("driverId", "==", email)
+      where("driverId", "==", driverUsername)
     );
     const querySnap = await getDocs(q);
-    const feedbackList = [];
-    querySnap.forEach((doc) => feedbackList.push(doc.data()));
+    const feedbackList = querySnap.docs.map((doc) => doc.data());
     setFeedbacks(feedbackList);
   };
 
   const updateRideStatus = async (rideId, newStatus) => {
-    const rideRef = doc(db, "rides", rideId);
-    await updateDoc(rideRef, { status: newStatus });
+    await updateDoc(doc(db, "rides", rideId), { status: newStatus });
     fetchRideRequests(user.email);
   };
 
@@ -86,12 +91,16 @@ export default function DriverDashboard() {
         <h2 style={styles.heading}>🚖 Driver Dashboard</h2>
 
         {user && (
-          <div style={styles.profileCard}>
+          <motion.div
+            style={styles.profileCard}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <p>
-              <strong>Email:</strong> {user.email}
+              <FaUser /> <strong>Email:</strong> {user.email}
             </p>
             <p>
-              <strong>Elo Rating:</strong>{" "}
+              <FaStar /> <strong>Elo Rating:</strong>{" "}
               {elo === "N/A" ? (
                 <>
                   <span style={{ color: "#888" }}>N/A</span>
@@ -100,24 +109,30 @@ export default function DriverDashboard() {
                   </button>
                 </>
               ) : (
-                <span style={{ color: "#00796b", fontWeight: "600" }}>
+                <span style={{ color: "#00796b", fontWeight: "bold" }}>
                   {elo}
                 </span>
               )}
             </p>
-          </div>
+          </motion.div>
         )}
 
         <div style={styles.feedbackSection}>
-          <h3 style={styles.subheading}>🛺 Ride Requests</h3>
+          <h3 style={styles.subheading}>🛺 Scheduled Ride Requests</h3>
           {rideRequests.length === 0 ? (
-            <p style={styles.noData}>No ride requests.</p>
+            <p style={styles.noData}>No ride requests found.</p>
           ) : (
             <ul style={styles.feedbackList}>
               {rideRequests.map((ride, i) => (
-                <li key={i} style={styles.feedbackCard}>
+                <motion.li
+                  key={i}
+                  style={styles.feedbackCard}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                >
                   <p>
-                    <strong>Tourist Email:</strong> {ride.touristEmail}
+                    <strong>Tourist ID:</strong> {ride.touristId}
                   </p>
                   <p>
                     <strong>Pickup:</strong> {ride.pickup}
@@ -126,40 +141,46 @@ export default function DriverDashboard() {
                     <strong>Destination:</strong> {ride.destination}
                   </p>
                   <p>
-                    <strong>Status:</strong> {ride.status}
-                  </p>
-                  <p>
                     <strong>Note:</strong> {ride.note || "None"}
                   </p>
                   <p>
-                    <strong>Time:</strong>{" "}
+                    <FaClock /> <strong>Time:</strong>{" "}
                     {new Date(ride.scheduledTime).toLocaleString()}
                   </p>
-                  <button
-                    onClick={() => updateRideStatus(ride.id, "Completed")}
-                  >
-                    Mark as Completed
-                  </button>
-                  <button
-                    onClick={() => updateRideStatus(ride.id, "Rejected")}
-                    style={{ marginLeft: "1rem" }}
-                  >
-                    Reject
-                  </button>
-                </li>
+                  <div style={styles.actionButtons}>
+                    <button
+                      onClick={() => updateRideStatus(ride.id, "Completed")}
+                      style={styles.completeBtn}
+                    >
+                      <FaCheck /> Complete
+                    </button>
+                    <button
+                      onClick={() => updateRideStatus(ride.id, "Rejected")}
+                      style={styles.rejectBtn}
+                    >
+                      <FaTimes /> Reject
+                    </button>
+                  </div>
+                </motion.li>
               ))}
             </ul>
           )}
         </div>
 
         <div style={styles.feedbackSection}>
-          <h3 style={styles.subheading}>📄 Ride Feedback History</h3>
+          <h3 style={styles.subheading}>📄 Feedback History</h3>
           {feedbacks.length === 0 ? (
             <p style={styles.noData}>No feedback yet.</p>
           ) : (
             <ul style={styles.feedbackList}>
               {feedbacks.map((fb, i) => (
-                <li key={i} style={styles.feedbackCard}>
+                <motion.li
+                  key={i}
+                  style={styles.feedbackCard}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
                   <p>
                     <strong>Rating:</strong> {fb.rating} ⭐
                   </p>
@@ -182,7 +203,7 @@ export default function DriverDashboard() {
                   <p>
                     <strong>Review:</strong> {fb.review}
                   </p>
-                </li>
+                </motion.li>
               ))}
             </ul>
           )}
@@ -201,35 +222,32 @@ const styles = {
   container: {
     maxWidth: "900px",
     margin: "auto",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     borderRadius: "12px",
     padding: "2rem",
-    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
   },
   heading: {
-    fontSize: "1.9rem",
-    color: "#004d40",
-    marginBottom: "1.5rem",
-    fontWeight: "bold",
+    fontSize: "2rem",
     textAlign: "center",
+    color: "#004d40",
+    fontWeight: "700",
+    marginBottom: "1.5rem",
   },
   profileCard: {
     backgroundColor: "#e0f2f1",
     padding: "1.5rem",
     borderRadius: "10px",
     marginBottom: "2rem",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.05)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
   subheading: {
-    fontSize: "1.4rem",
-    color: "#00796b",
+    fontSize: "1.5rem",
+    color: "#00695c",
     marginBottom: "1rem",
   },
   feedbackSection: {
-    backgroundColor: "#f5f5f5",
-    padding: "1.5rem",
-    borderRadius: "10px",
-    marginTop: "2rem",
+    marginTop: "2.5rem",
   },
   feedbackList: {
     listStyle: "none",
@@ -238,26 +256,45 @@ const styles = {
   },
   feedbackCard: {
     backgroundColor: "#ffffff",
-    padding: "1rem",
     border: "1px solid #ddd",
     borderRadius: "8px",
+    padding: "1rem",
     marginBottom: "1rem",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
   },
   initBtn: {
-    marginLeft: "1rem",
-    padding: "5px 12px",
+    marginLeft: "10px",
+    padding: "6px 12px",
     backgroundColor: "#00796b",
     color: "#fff",
     border: "none",
     borderRadius: "5px",
     cursor: "pointer",
-    fontWeight: "bold",
-    fontSize: "0.9rem",
+  },
+  actionButtons: {
+    marginTop: "10px",
+    display: "flex",
+    gap: "10px",
+  },
+  completeBtn: {
+    backgroundColor: "#2e7d32",
+    color: "#fff",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "5px",
+    cursor: "pointer",
+  },
+  rejectBtn: {
+    backgroundColor: "#c62828",
+    color: "#fff",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "5px",
+    cursor: "pointer",
   },
   noData: {
-    textAlign: "center",
     color: "#888",
-    fontSize: "1rem",
+    fontStyle: "italic",
+    textAlign: "center",
   },
 };
