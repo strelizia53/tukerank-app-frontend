@@ -15,6 +15,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [Username, setUsername] = useState("");
+  const [userRole, setUserRole] = useState("");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -23,10 +24,13 @@ const Navbar = () => {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setUsername(docSnap.data().username || "");
+          const data = docSnap.data();
+          setUsername(data.username || "");
+          setUserRole(data.role || "");
         }
       } else {
         setUsername("");
+        setUserRole("");
       }
     });
     return () => unsub();
@@ -37,12 +41,23 @@ const Navbar = () => {
     navigate("/");
   };
 
+  const handleLogoClick = () => {
+    if (!user) return navigate("/");
+    if (userRole === "tourist") return navigate("/dashboard/tourist");
+    if (userRole === "driver") return navigate("/dashboard/driver");
+    if (userRole === "admin") return navigate("/admin/dashboard");
+    return navigate("/");
+  };
+
   return (
     <nav style={styles.nav}>
       <div style={styles.logoContainer}>
-        <Link to="/" style={styles.logo}>
+        <span
+          onClick={handleLogoClick}
+          style={{ ...styles.logo, cursor: "pointer" }}
+        >
           🛺 <span style={{ fontWeight: "600" }}>TukeRank</span>
-        </Link>
+        </span>
       </div>
 
       <div style={styles.navLinks}>

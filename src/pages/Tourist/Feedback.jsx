@@ -75,6 +75,8 @@ const Feedback = () => {
 
       const { sentiment, eloChange, newElo } = res.data;
 
+      const currentDate = new Date();
+
       // 3. Add feedback document to 'feedbacks'
       await addDoc(collection(db, "feedbacks"), {
         driverId: username,
@@ -85,7 +87,8 @@ const Feedback = () => {
         newElo,
         rideId: ride.id,
         touristEmail: userEmail,
-        date: new Date(),
+        date: currentDate,
+        dateReadable: currentDate.toLocaleString(), // ✅ Human-readable timestamp
       });
 
       // 4. Update 'rides' to reflect feedback was submitted
@@ -102,7 +105,8 @@ const Feedback = () => {
       await addDoc(collection(db, "eloHistory"), {
         driverId: username,
         elo: newElo,
-        date: new Date(),
+        date: currentDate,
+        dateReadable: currentDate.toLocaleString(), // Optional here too
       });
 
       setMessage("✅ Feedback submitted successfully!");

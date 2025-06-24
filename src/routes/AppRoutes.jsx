@@ -6,6 +6,7 @@ import Home from "../pages/General/Home";
 import Login from "../pages/General/Login";
 import Register from "../pages/General/Register";
 import About from "../pages/General/About";
+import NotFound from "../pages/General/NotFound";
 
 //tourist stuff
 import TouristDashboard from "../pages/Tourist/Dashboard";
@@ -32,6 +33,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/about" element={<About />} />
+      <Route path="*" element={<NotFound />} />
 
       {/* Tourist Routes */}
       <Route path="/dashboard/tourist" element={<TouristDashboard />} />
