@@ -51,10 +51,7 @@ const TouristDashboard = () => {
               <p style={styles.driverInfo}>
                 <strong>Elo Rating:</strong> {driver.elo || "Unrated"}
               </p>
-              <button
-                style={styles.button}
-                onClick={() => alert("🚧 Ride feature coming soon!")}
-              >
+              <button style={styles.button} onClick={() => navigate(`/book`)}>
                 Book Ride
               </button>
             </div>

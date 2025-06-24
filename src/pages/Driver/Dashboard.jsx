@@ -1,66 +1,83 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
-import { onAuthStateChanged } from "firebase/auth";
 import {
-  doc,
-  getDoc,
   collection,
+  getDocs,
   query,
   where,
-  getDocs,
   updateDoc,
+  doc,
 } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function DriverDashboard() {
   const [user, setUser] = useState(null);
-  const [username, setUsername] = useState("");
   const [elo, setElo] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [rideRequests, setRideRequests] = useState([]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setUser(u);
-        await fetchDriverData(u.uid);
+        fetchDriverData(u.email);
+        fetchRideRequests(u.email);
+        fetchFeedbacks(u.email);
       }
     });
 
     return () => unsub();
   }, []);
 
-  // Trigger fetching feedbacks once username is loaded
-  useEffect(() => {
-    if (username) {
-      fetchFeedbacks(username);
-    }
-  }, [username]);
-
-  const fetchDriverData = async (uid) => {
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      const data = userSnap.data();
-      setUsername(data.username || "N/A");
-      setElo(data.elo || "N/A");
+  const fetchDriverData = async (email) => {
+    const snapshot = await getDocs(
+      query(collection(db, "users"), where("email", "==", email))
+    );
+    if (!snapshot.empty) {
+      const driver = snapshot.docs[0].data();
+      setElo(driver.elo || "N/A");
     }
   };
 
   const initializeElo = async () => {
     if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, { elo: 100 });
-    setElo(100);
+    const snapshot = await getDocs(
+      query(collection(db, "users"), where("email", "==", user.email))
+    );
+    if (!snapshot.empty) {
+      const docId = snapshot.docs[0].id;
+      await updateDoc(doc(db, "users", docId), { elo: 100 });
+      setElo(100);
+    }
   };
 
-  const fetchFeedbacks = async (uname) => {
+  const fetchRideRequests = async (email) => {
+    const q = query(
+      collection(db, "rides"),
+      where("driverEmail", "==", email),
+      where("status", "==", "Scheduled")
+    );
+    const snap = await getDocs(q);
+    const list = [];
+    snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+    setRideRequests(list);
+  };
+
+  const fetchFeedbacks = async (email) => {
     const q = query(
       collection(db, "feedbacks"),
-      where("driverId", "==", uname)
+      where("driverId", "==", email)
     );
     const querySnap = await getDocs(q);
     const feedbackList = [];
     querySnap.forEach((doc) => feedbackList.push(doc.data()));
     setFeedbacks(feedbackList);
+  };
+
+  const updateRideStatus = async (rideId, newStatus) => {
+    const rideRef = doc(db, "rides", rideId);
+    await updateDoc(rideRef, { status: newStatus });
+    fetchRideRequests(user.email);
   };
 
   return (
@@ -70,9 +87,6 @@ export default function DriverDashboard() {
 
         {user && (
           <div style={styles.profileCard}>
-            <p>
-              <strong>Username:</strong> {username}
-            </p>
             <p>
               <strong>Email:</strong> {user.email}
             </p>
@@ -95,6 +109,50 @@ export default function DriverDashboard() {
         )}
 
         <div style={styles.feedbackSection}>
+          <h3 style={styles.subheading}>🛺 Ride Requests</h3>
+          {rideRequests.length === 0 ? (
+            <p style={styles.noData}>No ride requests.</p>
+          ) : (
+            <ul style={styles.feedbackList}>
+              {rideRequests.map((ride, i) => (
+                <li key={i} style={styles.feedbackCard}>
+                  <p>
+                    <strong>Tourist Email:</strong> {ride.touristEmail}
+                  </p>
+                  <p>
+                    <strong>Pickup:</strong> {ride.pickup}
+                  </p>
+                  <p>
+                    <strong>Destination:</strong> {ride.destination}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {ride.status}
+                  </p>
+                  <p>
+                    <strong>Note:</strong> {ride.note || "None"}
+                  </p>
+                  <p>
+                    <strong>Time:</strong>{" "}
+                    {new Date(ride.scheduledTime).toLocaleString()}
+                  </p>
+                  <button
+                    onClick={() => updateRideStatus(ride.id, "Completed")}
+                  >
+                    Mark as Completed
+                  </button>
+                  <button
+                    onClick={() => updateRideStatus(ride.id, "Rejected")}
+                    style={{ marginLeft: "1rem" }}
+                  >
+                    Reject
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div style={styles.feedbackSection}>
           <h3 style={styles.subheading}>📄 Ride Feedback History</h3>
           {feedbacks.length === 0 ? (
             <p style={styles.noData}>No feedback yet.</p>
@@ -102,10 +160,6 @@ export default function DriverDashboard() {
             <ul style={styles.feedbackList}>
               {feedbacks.map((fb, i) => (
                 <li key={i} style={styles.feedbackCard}>
-                  <p>
-                    <strong>Date:</strong>{" "}
-                    {fb.date ? new Date(fb.date).toLocaleString() : "N/A"}
-                  </p>
                   <p>
                     <strong>Rating:</strong> {fb.rating} ⭐
                   </p>
@@ -175,6 +229,7 @@ const styles = {
     backgroundColor: "#f5f5f5",
     padding: "1.5rem",
     borderRadius: "10px",
+    marginTop: "2rem",
   },
   feedbackList: {
     listStyle: "none",

@@ -12,7 +12,7 @@ const BookRide = () => {
   const [pickupPlace, setPickupPlace] = useState("");
   const [destinationPlace, setDestinationPlace] = useState("");
   const [note, setNote] = useState("");
-  const [driverId, setDriverId] = useState("");
+  const [driverEmail, setDriverEmail] = useState("");
   const [scheduledTime, setScheduledTime] = useState(null);
   const [toast, setToast] = useState("");
   const navigate = useNavigate();
@@ -44,19 +44,19 @@ const BookRide = () => {
     const destination =
       destinationRef.current.getPlace()?.formatted_address || "";
 
-    if (!pickup || !destination || !driverId || !scheduledTime) {
+    if (!pickup || !destination || !driverEmail || !scheduledTime) {
       setToast("❌ Please complete all fields.");
       return;
     }
 
     try {
       await addDoc(collection(db, "rides"), {
-        driverId,
+        driverEmail,
         pickup,
         destination,
         note,
         scheduledTime,
-        touristId: auth.currentUser.uid,
+        touristEmail: auth.currentUser.email,
         createdAt: new Date(),
         status: "Scheduled",
       });
@@ -64,7 +64,7 @@ const BookRide = () => {
       setToast(
         "✅ Ride booked for " + new Date(scheduledTime).toLocaleString()
       );
-      setDriverId("");
+      setDriverEmail("");
       setNote("");
       setScheduledTime(null);
     } catch (err) {
@@ -82,16 +82,16 @@ const BookRide = () => {
         <form onSubmit={handleSubmit} style={styles.form}>
           <label style={styles.label}>Select Driver</label>
           <select
-            name="driverId"
-            value={driverId}
-            onChange={(e) => setDriverId(e.target.value)}
+            name="driverEmail"
+            value={driverEmail}
+            onChange={(e) => setDriverEmail(e.target.value)}
             required
             style={styles.input}
           >
             <option value="">-- Choose a Driver --</option>
             {drivers.map((driver) => (
-              <option key={driver.id} value={driver.id}>
-                {driver.firstName} {driver.lastName} ({driver.username})
+              <option key={driver.id} value={driver.email}>
+                {driver.firstName} {driver.lastName} ({driver.email})
               </option>
             ))}
           </select>
