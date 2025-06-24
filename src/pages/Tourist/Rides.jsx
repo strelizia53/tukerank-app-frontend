@@ -23,7 +23,7 @@ const Rides = () => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const ridesRef = collection(db, "rides");
-        const q = query(ridesRef, where("touristId", "==", user.uid));
+        const q = query(ridesRef, where("touristEmail", "==", user.email));
         const snapshot = await getDocs(q);
 
         const rideList = snapshot.docs.map((doc) => ({

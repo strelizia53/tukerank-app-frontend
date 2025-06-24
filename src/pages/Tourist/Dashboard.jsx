@@ -37,6 +37,16 @@ const TouristDashboard = () => {
         <h1 style={styles.heading}>
           👋 Welcome{user?.displayName ? `, ${user.displayName}` : ""}!
         </h1>
+
+        <div style={styles.actionsRow}>
+          <button
+            style={styles.secondaryButton}
+            onClick={() => navigate("/rides")}
+          >
+            📋 View My Rides
+          </button>
+        </div>
+
         <h2 style={styles.subheading}>🚖 Top-Rated Tuk Drivers</h2>
 
         <div style={styles.driverGrid}>
@@ -80,6 +90,19 @@ const styles = {
     color: "#004d40",
     marginBottom: "0.5rem",
     fontWeight: "bold",
+  },
+  actionsRow: {
+    marginBottom: "1.5rem",
+  },
+  secondaryButton: {
+    backgroundColor: "#ffffff",
+    color: "#00796b",
+    border: "2px solid #00796b",
+    padding: "8px 14px",
+    borderRadius: "8px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
   },
   subheading: {
     fontSize: "1.5rem",

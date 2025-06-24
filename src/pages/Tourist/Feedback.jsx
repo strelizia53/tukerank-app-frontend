@@ -1,17 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { db } from "../../firebase";
-import { doc, getDoc, updateDoc, addDoc, collection } from "firebase/firestore";
+import { auth, db } from "../../firebase";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  addDoc,
+  collection,
+  getDocs,
+} from "firebase/firestore";
 import axios from "axios";
+import { onAuthStateChanged } from "firebase/auth";
 
 const Feedback = () => {
   const { rideId } = useParams();
   const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState("");
   const [review, setReview] = useState("");
   const [rating, setRating] = useState(5);
   const [ride, setRide] = useState(null);
   const [message, setMessage] = useState("");
 
+  // Get logged-in tourist email
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) setUserEmail(u.email);
+      else navigate("/login");
+    });
+    return () => unsub();
+  }, [navigate]);
+
+  // Fetch ride details
   useEffect(() => {
     const fetchRide = async () => {
       const rideDoc = await getDoc(doc(db, "rides", rideId));
@@ -26,29 +45,68 @@ const Feedback = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!ride || !userEmail) return;
+
     try {
+      // 1. Get the driver's username using their email
+      let username = "";
+      const userSnap = await getDocs(collection(db, "users"));
+      let driverDocId = null;
+
+      userSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.email === ride.driverEmail) {
+          username = data.username;
+          driverDocId = docSnap.id;
+        }
+      });
+
+      if (!username || !driverDocId) {
+        setMessage("❌ Driver profile not found.");
+        return;
+      }
+
+      // 2. Call the Flask API with proper values
+      const res = await axios.post("http://127.0.0.1:5000/feedback", {
+        username,
+        review,
+        rating,
+      });
+
+      const { sentiment, eloChange, newElo } = res.data;
+
+      // 3. Add feedback document to 'feedbacks'
+      await addDoc(collection(db, "feedbacks"), {
+        driverId: username,
+        review,
+        rating,
+        sentiment,
+        eloChange,
+        newElo,
+        rideId: ride.id,
+        touristEmail: userEmail,
+        date: new Date(),
+      });
+
+      // 4. Update 'rides' to reflect feedback was submitted
       await updateDoc(doc(db, "rides", rideId), {
         feedback: { review, rating },
       });
 
-      const res = await axios.post("https://your-python-api.com/feedback", {
-        driverId: ride.driverId,
-        rideId: ride.id,
-        rating,
-        review,
+      // 5. Update user's Elo
+      await updateDoc(doc(db, "users", driverDocId), {
+        elo: newElo,
       });
 
-      const { sentiment, updatedElo } = res.data;
-
-      await updateDoc(doc(db, "users", ride.driverId), { elo: updatedElo });
-
-      await addDoc(collection(db, "users", ride.driverId, "eloHistory"), {
-        elo: updatedElo,
+      // 6. Add Elo history record
+      await addDoc(collection(db, "eloHistory"), {
+        driverId: username,
+        elo: newElo,
         date: new Date(),
       });
 
       setMessage("✅ Feedback submitted successfully!");
-      setTimeout(() => navigate("/rides"), 2000);
+      setTimeout(() => navigate("/rides"), 2500);
     } catch (err) {
       console.error(err);
       setMessage("❌ Failed to submit feedback. Try again.");
