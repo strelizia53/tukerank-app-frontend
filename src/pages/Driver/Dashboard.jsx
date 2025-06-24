@@ -9,8 +9,8 @@ import {
   doc,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { motion } from "framer-motion";
-import { FaUser, FaStar, FaCheck, FaTimes, FaClock } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { FaChartBar, FaComments } from "react-icons/fa";
 
 export default function DriverDashboard() {
   const [user, setUser] = useState(null);
@@ -30,7 +30,6 @@ export default function DriverDashboard() {
         }
       }
     });
-
     return () => unsub();
   }, []);
 
@@ -66,7 +65,8 @@ export default function DriverDashboard() {
       where("status", "==", "Scheduled")
     );
     const snap = await getDocs(q);
-    const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const list = [];
+    snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
     setRideRequests(list);
   };
 
@@ -76,12 +76,14 @@ export default function DriverDashboard() {
       where("driverId", "==", driverUsername)
     );
     const querySnap = await getDocs(q);
-    const feedbackList = querySnap.docs.map((doc) => doc.data());
+    const feedbackList = [];
+    querySnap.forEach((doc) => feedbackList.push(doc.data()));
     setFeedbacks(feedbackList);
   };
 
   const updateRideStatus = async (rideId, newStatus) => {
-    await updateDoc(doc(db, "rides", rideId), { status: newStatus });
+    const rideRef = doc(db, "rides", rideId);
+    await updateDoc(rideRef, { status: newStatus });
     fetchRideRequests(user.email);
   };
 
@@ -90,17 +92,24 @@ export default function DriverDashboard() {
       <div style={styles.container}>
         <h2 style={styles.heading}>🚖 Driver Dashboard</h2>
 
+        {/* Nav Links */}
+        <div style={styles.navLinks}>
+          <Link to="/performance" style={styles.navBtn}>
+            <FaChartBar style={styles.icon} /> Performance
+          </Link>
+          <Link to="/feedbackhistory" style={styles.navBtn}>
+            <FaComments style={styles.icon} /> Feedback History
+          </Link>
+        </div>
+
+        {/* Profile Card */}
         {user && (
-          <motion.div
-            style={styles.profileCard}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <div style={styles.profileCard}>
             <p>
-              <FaUser /> <strong>Email:</strong> {user.email}
+              <strong>Email:</strong> {user.email}
             </p>
             <p>
-              <FaStar /> <strong>Elo Rating:</strong>{" "}
+              <strong>Elo Rating:</strong>{" "}
               {elo === "N/A" ? (
                 <>
                   <span style={{ color: "#888" }}>N/A</span>
@@ -109,28 +118,23 @@ export default function DriverDashboard() {
                   </button>
                 </>
               ) : (
-                <span style={{ color: "#00796b", fontWeight: "bold" }}>
+                <span style={{ color: "#00796b", fontWeight: "600" }}>
                   {elo}
                 </span>
               )}
             </p>
-          </motion.div>
+          </div>
         )}
 
+        {/* Ride Requests */}
         <div style={styles.feedbackSection}>
-          <h3 style={styles.subheading}>🛺 Scheduled Ride Requests</h3>
+          <h3 style={styles.subheading}>🛺 Ride Requests</h3>
           {rideRequests.length === 0 ? (
-            <p style={styles.noData}>No ride requests found.</p>
+            <p style={styles.noData}>No ride requests.</p>
           ) : (
             <ul style={styles.feedbackList}>
               {rideRequests.map((ride, i) => (
-                <motion.li
-                  key={i}
-                  style={styles.feedbackCard}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                >
+                <li key={i} style={styles.feedbackCard}>
                   <p>
                     <strong>Tourist ID:</strong> {ride.touristId}
                   </p>
@@ -141,46 +145,42 @@ export default function DriverDashboard() {
                     <strong>Destination:</strong> {ride.destination}
                   </p>
                   <p>
+                    <strong>Status:</strong> {ride.status}
+                  </p>
+                  <p>
                     <strong>Note:</strong> {ride.note || "None"}
                   </p>
                   <p>
-                    <FaClock /> <strong>Time:</strong>{" "}
+                    <strong>Time:</strong>{" "}
                     {new Date(ride.scheduledTime).toLocaleString()}
                   </p>
-                  <div style={styles.actionButtons}>
-                    <button
-                      onClick={() => updateRideStatus(ride.id, "Completed")}
-                      style={styles.completeBtn}
-                    >
-                      <FaCheck /> Complete
-                    </button>
-                    <button
-                      onClick={() => updateRideStatus(ride.id, "Rejected")}
-                      style={styles.rejectBtn}
-                    >
-                      <FaTimes /> Reject
-                    </button>
-                  </div>
-                </motion.li>
+                  <button
+                    onClick={() => updateRideStatus(ride.id, "Completed")}
+                    style={styles.actionBtn}
+                  >
+                    Mark as Completed
+                  </button>
+                  <button
+                    onClick={() => updateRideStatus(ride.id, "Rejected")}
+                    style={{ ...styles.actionBtn, backgroundColor: "#c62828" }}
+                  >
+                    Reject
+                  </button>
+                </li>
               ))}
             </ul>
           )}
         </div>
 
+        {/* Feedback History Inline */}
         <div style={styles.feedbackSection}>
-          <h3 style={styles.subheading}>📄 Feedback History</h3>
+          <h3 style={styles.subheading}>📄 Ride Feedback History</h3>
           {feedbacks.length === 0 ? (
             <p style={styles.noData}>No feedback yet.</p>
           ) : (
             <ul style={styles.feedbackList}>
               {feedbacks.map((fb, i) => (
-                <motion.li
-                  key={i}
-                  style={styles.feedbackCard}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
+                <li key={i} style={styles.feedbackCard}>
                   <p>
                     <strong>Rating:</strong> {fb.rating} ⭐
                   </p>
@@ -203,7 +203,7 @@ export default function DriverDashboard() {
                   <p>
                     <strong>Review:</strong> {fb.review}
                   </p>
-                </motion.li>
+                </li>
               ))}
             </ul>
           )}
@@ -222,32 +222,57 @@ const styles = {
   container: {
     maxWidth: "900px",
     margin: "auto",
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     borderRadius: "12px",
     padding: "2rem",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
   },
   heading: {
-    fontSize: "2rem",
-    textAlign: "center",
+    fontSize: "1.9rem",
     color: "#004d40",
-    fontWeight: "700",
-    marginBottom: "1.5rem",
+    marginBottom: "1.2rem",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  navLinks: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "1.5rem",
+    marginBottom: "2rem",
+    flexWrap: "wrap",
+  },
+  navBtn: {
+    padding: "0.6rem 1.2rem",
+    backgroundColor: "#004d40",
+    color: "#fff",
+    borderRadius: "8px",
+    textDecoration: "none",
+    fontWeight: "bold",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    transition: "0.3s",
+  },
+  icon: {
+    fontSize: "1.1rem",
   },
   profileCard: {
     backgroundColor: "#e0f2f1",
     padding: "1.5rem",
     borderRadius: "10px",
     marginBottom: "2rem",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.05)",
   },
   subheading: {
-    fontSize: "1.5rem",
-    color: "#00695c",
+    fontSize: "1.4rem",
+    color: "#00796b",
     marginBottom: "1rem",
   },
   feedbackSection: {
-    marginTop: "2.5rem",
+    backgroundColor: "#f5f5f5",
+    padding: "1.5rem",
+    borderRadius: "10px",
+    marginTop: "2rem",
   },
   feedbackList: {
     listStyle: "none",
@@ -256,45 +281,37 @@ const styles = {
   },
   feedbackCard: {
     backgroundColor: "#ffffff",
+    padding: "1rem",
     border: "1px solid #ddd",
     borderRadius: "8px",
-    padding: "1rem",
     marginBottom: "1rem",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+  },
+  actionBtn: {
+    marginTop: "10px",
+    backgroundColor: "#00796b",
+    color: "#fff",
+    padding: "8px 12px",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    marginRight: "0.5rem",
   },
   initBtn: {
-    marginLeft: "10px",
-    padding: "6px 12px",
+    marginLeft: "1rem",
+    padding: "5px 12px",
     backgroundColor: "#00796b",
     color: "#fff",
     border: "none",
     borderRadius: "5px",
     cursor: "pointer",
-  },
-  actionButtons: {
-    marginTop: "10px",
-    display: "flex",
-    gap: "10px",
-  },
-  completeBtn: {
-    backgroundColor: "#2e7d32",
-    color: "#fff",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-  rejectBtn: {
-    backgroundColor: "#c62828",
-    color: "#fff",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "5px",
-    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "0.9rem",
   },
   noData: {
-    color: "#888",
-    fontStyle: "italic",
     textAlign: "center",
+    color: "#888",
+    fontSize: "1rem",
   },
 };

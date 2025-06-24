@@ -32,13 +32,19 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/about" element={<About />} />
+
+      {/* Tourist Routes */}
       <Route path="/dashboard/tourist" element={<TouristDashboard />} />
       <Route path="/book" element={<BookRide />} />
       <Route path="/rides" element={<Rides />} />
       <Route path="/feedback/:rideId" element={<Feedback />} />
+
+      {/* Driver Routes */}
       <Route path="/dashboard/driver" element={<DriverDashboard />} />
       <Route path="/performance" element={<Performance />} />
       <Route path="/feedbackhistory" element={<FeedbackHistory />} />
+
+      {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/reviews" element={<Reviews />} />

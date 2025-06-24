@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../../firebase";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   LineChart,
@@ -19,27 +19,35 @@ const Performance = () => {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userRef = collection(db, "users", user.uid, "eloHistory");
-        const q = query(userRef, orderBy("date"));
-        const snap = await getDocs(q);
+        // Step 1: Get username
+        const userSnapshot = await getDocs(collection(db, "users"));
+        let currentUsername = "";
 
-        const data = snap.docs.map((doc) => {
+        userSnapshot.forEach((docSnap) => {
+          if (docSnap.id === user.uid) {
+            currentUsername = docSnap.data().username || "";
+            setUsername(currentUsername);
+          }
+        });
+
+        if (!currentUsername) return;
+
+        // Step 2: Query feedbacks by driverId (username)
+        const feedbackQuery = query(
+          collection(db, "feedbacks"),
+          where("driverId", "==", currentUsername)
+        );
+        const feedbackSnap = await getDocs(feedbackQuery);
+
+        const feedbackData = feedbackSnap.docs.map((doc, i) => {
           const d = doc.data();
           return {
-            elo: d.elo,
-            date: new Date(d.date.seconds * 1000).toLocaleDateString(),
+            elo: d.eloChange || 0,
+            date: `Feedback ${i + 1}`, // Since there's no timestamp
           };
         });
 
-        setEloData(data);
-
-        // Get username
-        const allUsers = await getDocs(collection(db, "users"));
-        allUsers.forEach((docSnap) => {
-          if (docSnap.id === user.uid) {
-            setUsername(docSnap.data().username || "");
-          }
-        });
+        setEloData(feedbackData);
       }
     });
 

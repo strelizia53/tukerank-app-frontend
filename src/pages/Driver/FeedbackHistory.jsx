@@ -16,9 +16,25 @@ export default function FeedbackHistory() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // Step 1: Get the username from users collection
+        const usersSnap = await getDocs(collection(db, "users"));
+        let username = "";
+        usersSnap.forEach((doc) => {
+          if (doc.id === user.uid) {
+            username = doc.data().username || "";
+          }
+        });
+
+        if (!username) {
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: Query feedbacks where driverId == username
         const feedbackRef = collection(db, "feedbacks");
-        const q = query(feedbackRef, where("driverId", "==", user.uid));
+        const q = query(feedbackRef, where("driverId", "==", username));
         const querySnap = await getDocs(q);
+
         const results = [];
         querySnap.forEach((doc) => results.push(doc.data()));
         results.sort((a, b) => new Date(b.date) - new Date(a.date));
