@@ -37,6 +37,9 @@ export default function AdminDashboard() {
     <div style={styles.wrapper}>
       <div style={styles.container}>
         <h2 style={styles.heading}>Welcome, Admin 👑</h2>
+        <a href="/admin/reviews" style={styles.reviewsLink}>
+          🔍 View All User Reviews
+        </a>
         <p style={styles.subtext}>
           Logged in as: <strong>{adminEmail}</strong>
         </p>
@@ -114,5 +117,15 @@ const styles = {
     fontSize: "2.5rem",
     fontWeight: "bold",
     color: "#004d40",
+  },
+  reviewsLink: {
+    display: "block",
+    textAlign: "center",
+    fontSize: "1rem",
+    color: "#00796b",
+    fontWeight: "bold",
+    textDecoration: "none",
+    marginBottom: "0.8rem",
+    transition: "color 0.3s",
   },
 };
